@@ -1,6 +1,7 @@
 # LightWebCord 🌐
 
 Lekki, przeglądarkowy klient Discorda, który pozwala na czatowanie na wybranych kanałach serwera bez konieczności logowania się na konto Discord. Idealny do szybkiej komunikacji, obsługi gości lub jako lekki interfejs na słabsze urządzenia.
+<img width="1916" height="963" alt="preview" src="https://github.com/user-attachments/assets/f0cb89b2-6b7c-44fc-a422-41a966ee625a" />
 
 ## ✨ Funkcje
 
