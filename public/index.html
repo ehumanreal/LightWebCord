@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightWebCord</title>
+    <style>
+        /* Ciemny motyw a'la Discord */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #36393f; color: #dcddde; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        #app { width: 100%; display: flex; flex-direction: column; background: #2f3136; height: 100%; }
+        
+        /* Layout główny */
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Sidebary */
+        .sidebar { background: #2f3136; width: 240px; display: flex; flex-direction: column; border-right: 1px solid #202225; flex-shrink: 0; }
+        .sidebar-right { border-right: none; border-left: 1px solid #202225; background: #2f3136; }
+        .sidebar-header { padding: 15px; font-weight: bold; text-transform: uppercase; font-size: 0.8rem; color: #8e9297; }
+
+        /* Header */
+        header { padding: 10px 15px; background: #202225; border-bottom: 1px solid #202225; font-weight: bold; display: flex; align-items: center; gap: 10px; height: 40px; }
+        .status-dot { width: 10px; height: 10px; background: #747f8d; border-radius: 50%; transition: background 0.3s; }
+
+        /* Obszar wiadomości */
+        #chat-area { flex: 1; display: flex; flex-direction: column; background: #36393f; min-width: 0; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: thin; scrollbar-color: #202225 #36393f; }
+        #messages::-webkit-scrollbar { width: 8px; }
+        #messages::-webkit-scrollbar-track { background: #2f3136; }
+        #messages::-webkit-scrollbar-thumb { background: #202225; border-radius: 4px; }
+
+        /* Pojedyncza wiadomość */
+        .message { display: flex; align-items: flex-start; gap: 12px; animation: fadeIn 0.2s ease; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #5865f2; background-size: cover; flex-shrink: 0; }
+        .content-wrapper { display: flex; flex-direction: column; }
+        .meta { display: flex; align-items: baseline; gap: 8px; }
+        .username { font-weight: 600; color: #fff; cursor: pointer; }
+        .username:hover { text-decoration: underline; }
+        .timestamp { font-size: 0.75rem; color: #72767d; }
+        .text { font-size: 0.95rem; line-height: 1.4; color: #dcddde; word-break: break-word; white-space: pre-wrap; }
+        .text a { color: #00b0f4; text-decoration: none; }
+        .text a:hover { text-decoration: underline; }
+
+        /* Input area */
+        #input-area { padding: 20px; background: #36393f; display: flex; gap: 10px; align-items: center; }
+        #msg-input { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #40444b; color: white; outline: none; font-size: 1rem; transition: background 0.2s; }
+        #msg-input:focus { background: #454950; }
+        #username-input { width: 100px; padding: 12px; border-radius: 8px; border: none; background: #40444b; color: white; outline: none; font-size: 1rem; transition: background 0.2s; text-align: center; }
+        #username-input:focus { background: #454950; }
+        button { padding: 10px 24px; background: #5865f2; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        button:hover { background: #4752c4; }
+
+        /* Elementy listy kanałów i użytkowników */
+        .channel-item, .user-item { padding: 8px 10px; margin: 2px 8px; border-radius: 4px; cursor: pointer; color: #8e9297; display: flex; align-items: center; gap: 8px; }
+        .channel-item:hover, .user-item:hover { background: #34373c; color: #dcddde; }
+        .channel-item.active { background: #393c43; color: white; }
+        .user-item { cursor: default; }
+        .user-status { width: 8px; height: 8px; border-radius: 50%; }
+        .status-online { background: #3ba55c; }
+        .status-idle { background: #faa61a; }
+        .status-dnd { background: #ed4245; }
+        .status-web { background: #5865f2; } /* Kolor dla użytkowników WWW */
+
+        /* Responsywność - ukrywanie sidebarów na małych ekranach */
+        @media (max-width: 768px) {
+            .sidebar { display: none; } /* Na razie proste ukrywanie, można dodać menu hamburger */
+            #app { width: 100%; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <div class="status-dot"></div>
+        <span id="status-text">LightWebCord</span>
+        <span id="current-channel-name" style="opacity: 0.5; margin-left: 10px;"># ...</span>
+    </header>
+    
+    <div id="main-container">
+        <!-- Lewy panel: Kanały -->
+        <div class="sidebar">
+            <div class="sidebar-header">KANAŁY</div>
+            <div id="channel-list">
+                <!-- Lista kanałów -->
+            </div>
+        </div>
+
+        <!-- Środek: Czat -->
+        <div id="chat-area">
+            <div id="messages">
+                <!-- Wiadomości wpadną tutaj -->
+            </div>
+
+            <form id="input-area">
+                <input id="username-input" type="text" placeholder="Nick" maxlength="20" />
+                <input id="msg-input" type="text" placeholder="Napisz wiadomość..." autocomplete="off" />
+                <button type="submit">Wyślij</button>
+            </form>
+        </div>
+
+        <!-- Prawy panel: Użytkownicy -->
+        <div class="sidebar sidebar-right">
+            <div class="sidebar-header">ONLINE</div>
+            <div id="user-list">
+                <!-- Lista użytkowników -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    const messagesDiv = document.getElementById('messages');
+    const channelListDiv = document.getElementById('channel-list');
+    const userListDiv = document.getElementById('user-list');
+    const form = document.getElementById('input-area');
+    const input = document.getElementById('msg-input');
+    const usernameInput = document.getElementById('username-input');
+    const statusDot = document.querySelector('.status-dot');
+    const statusText = document.getElementById('status-text');
+    const currentChannelNameEl = document.getElementById('current-channel-name');
+
+    let currentChannelId = null;
+    let channels = [];
+    const messagesCache = {}; // Pamięć podręczna na wiadomości: { channelId: [wiadomości] }
+
+    // Wczytaj zapisany nick lub ustaw domyślny
+    if (localStorage.getItem('web_username')) {
+        usernameInput.value = localStorage.getItem('web_username');
+    } else {
+        usernameInput.value = "Gość_" + Math.floor(Math.random() * 1000);
+    }
+
+    // --- FUNKCJE POMOCNICZE ---
+
+    // 1. Zabezpieczenie przed XSS (bardzo ważne!)
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // 2. Formatowanie (Markdown + Linki)
+    function formatMessageContent(text) {
+        let formatted = escapeHtml(text);
+
+        // Linki (http/https)
+        formatted = formatted.replace(
+            /(https?:\/\/[^\s]+)/g, 
+            '<a href="$1" target="_blank">$1</a>'
+        );
+
+        // Pogrubienie **tekst**
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        
+        // Kursywa *tekst*
+        formatted = formatted.replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+        // Kod `tekst`
+        formatted = formatted.replace(/`(.*?)`/g, '<code style="background:#2f3136; padding:2px 4px; border-radius:3px; font-family:monospace;">$1</code>');
+
+        return formatted;
+    }
+
+    function appendMessage(user, text, avatarUrl, color = '#fff') {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'message';
+        
+        const avatarStyle = avatarUrl ? `background-image: url('${avatarUrl}')` : '';
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        msgEl.innerHTML = `
+            <div class="avatar" style="${avatarStyle}"></div>
+            <div class="content-wrapper">
+                <div class="meta">
+                    <span class="username" style="color: ${color}">${user}</span>
+                    <span class="timestamp">${time}</span>
+                </div>
+                <div class="text">${formatMessageContent(text)}</div>
+            </div>
+        `;
+        messagesDiv.appendChild(msgEl);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // --- OBSŁUGA SOCKET.IO ---
+
+    socket.on('connect', () => {
+        statusDot.style.background = '#3ba55c'; // Zielony
+        statusText.textContent = 'LightWebCord - Połączono';
+        socket.emit('join_user', usernameInput.value); // Zgłoś obecność
+    });
+
+    socket.on('disconnect', () => {
+        statusDot.style.background = '#ed4245'; // Czerwony
+        statusText.textContent = 'Brak połączenia';
+    });
+
+    // Odbieranie listy kanałów
+    socket.on('channel_list', (data) => {
+        channels = data;
+        renderChannels();
+        // Domyślnie wybierz pierwszy kanał, jeśli żaden nie jest wybrany
+        if (!currentChannelId && channels.length > 0) {
+            selectChannel(channels[0].id);
+        }
+    });
+
+    // Odbieranie listy użytkowników
+    socket.on('user_list_update', (data) => {
+        userListDiv.innerHTML = '';
+        
+        // Funkcja pomocnicza do renderowania
+        const renderUser = (u, type) => {
+            const el = document.createElement('div');
+            el.className = 'user-item';
+            const avatar = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=random`;
+            el.innerHTML = `
+                <div class="avatar" style="width: 32px; height: 32px; background-image: url('${avatar}')"></div>
+                <div style="flex:1; overflow:hidden; text-overflow:ellipsis;">
+                    <div style="font-weight:bold; font-size:0.9em; color:${u.color || '#dcddde'}">${u.username}</div>
+                    <div style="font-size:0.7em; opacity:0.7;">${type === 'web' ? 'Strona WWW' : 'Discord'}</div>
+                </div>
+                <div class="user-status status-${u.status}"></div>
+            `;
+            userListDiv.appendChild(el);
+        };
+
+        // Najpierw użytkownicy WWW
+        data.web.forEach(u => renderUser(u, 'web'));
+        // Potem Discord
+        data.discord.forEach(u => renderUser(u, 'discord'));
+    });
+
+    // Odbieranie z Discorda
+    socket.on('discord_message', (data) => {
+        // 1. Zapisz wiadomość w pamięci podręcznej
+        if (!messagesCache[data.channelId]) messagesCache[data.channelId] = [];
+        messagesCache[data.channelId].push(data);
+
+        // Wyświetl tylko jeśli wiadomość jest z aktualnego kanału
+        if (data.channelId === currentChannelId) {
+            appendMessage(data.user, data.content, data.avatar, data.color);
+        }
+    });
+
+    function renderChannels() {
+        channelListDiv.innerHTML = '';
+        channels.forEach(ch => {
+            const el = document.createElement('div');
+            el.className = `channel-item ${ch.id === currentChannelId ? 'active' : ''}`;
+            el.textContent = `# ${ch.name}`;
+            el.onclick = () => selectChannel(ch.id);
+            channelListDiv.appendChild(el);
+        });
+    }
+
+    function selectChannel(id) {
+        currentChannelId = id;
+        const ch = channels.find(c => c.id === id);
+        currentChannelNameEl.textContent = ch ? `# ${ch.name}` : '';
+        messagesDiv.innerHTML = ''; // Wyczyść czat przy zmianie kanału
+        
+        // Załaduj wiadomości z pamięci, jeśli istnieją
+        if (messagesCache[id]) {
+            messagesCache[id].forEach(msg => {
+                appendMessage(msg.user, msg.content, msg.avatar, msg.color);
+            });
+        }
+        
+        renderChannels(); // Odśwież wygląd (klasa active)
+    }
+
+    // Wysyłanie
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = usernameInput.value.trim() || 'Anonim';
+
+        if (input.value.trim() && currentChannelId) {
+            localStorage.setItem('web_username', user); // Zapisz nick
+            socket.emit('web_message', { 
+                username: user, 
+                message: input.value,
+                channelId: currentChannelId 
+            });
+            
+            // Tworzymy obiekt wiadomości lokalnej do zapisu
+            const localMsg = {
+                user: user + " (WEB)",
+                content: input.value,
+                avatar: null,
+                color: '#3ba55c'
+            };
+
+            // Zapisz w pamięci podręcznej
+            if (!messagesCache[currentChannelId]) messagesCache[currentChannelId] = [];
+            messagesCache[currentChannelId].push(localMsg);
+
+            // Pokazujemy wiadomość lokalnie (jako "Ja")
+            appendMessage(localMsg.user, localMsg.content, localMsg.avatar, localMsg.color);
+            
+            input.value = '';
+        }
+    });
+</script>
+
+</body>
+</html>
