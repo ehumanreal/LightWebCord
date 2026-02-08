@@ -10,7 +10,7 @@ Lekki, przeglądarkowy klient Discorda, który pozwala na czatowanie na wybranyc
 *   **Historia lokalna**: Wiadomości są zapamiętywane w przeglądarce po zmianie kanału.
 *   **Formatowanie tekstu**: Obsługa pogrubienia, kursywy, kodu i linków.
 *   **Ciemny motyw**: Nowoczesny wygląd wzorowany na Discordzie.
-*   **Wsparcie dla DuckDNS**: Gotowy do działania przez internet.
+*   **Wsparcie dla DuckDNS itp**: Gotowy do działania przez internet.
 
 ## ⚙️ Wymagania
 
@@ -69,7 +69,7 @@ npm start
 
 Aplikacja będzie dostępna pod adresem:
 *   Lokalnie: `http://localhost:3002`
-*   W sieci: `http://twoje-ip:3002` lub przez DuckDNS (jeśli skonfigurowano przekierowanie portów).
+*   W sieci: `http://twoje-ip:3002` (jeśli skonfigurowano przekierowanie portów).
 
 ## 🔒 Bezpieczeństwo
 
